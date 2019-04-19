@@ -3,7 +3,8 @@
 -світлодіоди
 Катод (мінус, коротка ніжка) світлодіда-на землю. Аноди (довгі ніжки):з'єднуємо через резистор>100Ом жовтий-d4, зелений-d5, синій-d6.
 -кнопка
-Одна ніжка на землю, друга на А3
+Одна ніжка на землю, друга на А3.
+*************************************************************************************************************************************
 ![screenshot 1](https://github.com/elpavlo/Arduino-projects/blob/master/calculator/photos/1.jpg)
 ![screenshot 2](https://github.com/elpavlo/Arduino-projects/blob/master/calculator/photos/2.jpg)
 ![screenshot 3](https://github.com/elpavlo/Arduino-projects/blob/master/calculator/photos/3.jpg)
