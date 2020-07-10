@@ -166,8 +166,8 @@ void command_disconnect(){
         str="";
       }
       //else if (str=="OK+SLEEP"){
-      //  Serial.print("SLEEPING");
-      //  }
+        //Serial.print("SLEEPING");
+        //}
       delay(50);
     }else{
       str="";
