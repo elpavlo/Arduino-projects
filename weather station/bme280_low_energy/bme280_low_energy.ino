@@ -21,6 +21,8 @@
 #include <math.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
+#include <avr/wdt.h>
+#include <avr/sleep.h>
 
 
 #define SEALEVELPRESSURE_HPA (1013.25)
@@ -33,9 +35,12 @@ unsigned long cur_millis_delay_transmitt;
 unsigned char i = 0;
 const unsigned char arr_size = 144;//160
 short int avg_press = 0;
-unsigned long pressure_into_mas_interval = 300000;//300000
+unsigned long pressure_into_mas_interval = 270000;//300000
 short int press_mas[arr_size];
 String str="";
+unsigned long int delay_counter=0;
+volatile bool break_flag = 0;
+unsigned long cur_time;
 
 void setup() {
     Serial.begin(9600);
@@ -45,6 +50,9 @@ void setup() {
     unsigned status;
     cur_millis = millis();
     cur_millis_delay_transmitt = millis();
+
+    cur_time = millis();
+    pinMode(2, INPUT_PULLUP);
     // default settings
     //status = bme.begin();  
     // You can also pass in a Wire library object like &Wire2
@@ -64,12 +72,14 @@ void setup() {
     
 
     //Serial.println();
+    //Serial.print("AT+SLEEP");
 }
 
 
 void loop() { 
-    
-    if (millis()> cur_millis + pressure_into_mas_interval){
+
+    //((millis()+ delay_counter*4000) - cur_time) > 60000)
+    if ( (millis() + delay_counter*4000 )> cur_time + pressure_into_mas_interval){ //allow adding to mas if spent more than 4.5 min (sleeping 5 min)
       if (i == arr_size){
         for (int j=0; j<arr_size-1;j++){ //arr_size-1
           press_mas[j]=press_mas[j+1];
@@ -78,7 +88,7 @@ void loop() {
         
       } 
    
-      cur_millis = millis();
+      cur_time = millis() + (delay_counter*4000);
       //float p_float = bme.readPressure() / 100.0F * 0.75006;
       int p = roundf(bme.readPressure() / 100.0F * 0.75006);
       if(i<arr_size){
@@ -104,16 +114,21 @@ void loop() {
       //Serial.print("end avg_press=");
       //Serial.println(avg_press);
         
-      
+      sleep_manager();
       
     }
+
     command_disconnect();
+    //sleep_manager();
     
     if (millis() - cur_millis_delay_transmitt > 3000){
-    cur_millis_delay_transmitt = millis();
-    printValues();
+      cur_millis_delay_transmitt = millis();
+      printValues();
   
     }
+
+    
+    
     //printValues();
     //delay(delayTime);
 }
@@ -124,7 +139,7 @@ void printValues() {
     int t = bme.readTemperature();
     int p = roundf(bme.readPressure() / 100.0F * 0.75006);
     int h = bme.readHumidity();
-    if (millis() < 3600000){ //3600000
+    if (millis()+ delay_counter * 4000 <  3600000){ //3600000
       Serial.print(t);
       Serial.print(p);
       Serial.print(h);
@@ -164,6 +179,7 @@ void command_disconnect(){
         Serial.print("AT+SLEEP");
         //digitalWrite(13,HIGH);
         str="";
+        sleep_manager();
       }
       //else if (str=="OK+SLEEP"){
         //Serial.print("SLEEPING");
@@ -172,4 +188,59 @@ void command_disconnect(){
     }else{
       str="";
     }
+}
+
+void sleep_manager(){
+  
+  //Serial.println("SLEEPING");
+  delay(60);
+  attachInterrupt(digitalPinToInterrupt(2), inter_handler, FALLING);
+  //detachInterrupt(0);
+  if ( (delay_counter % 70) == 0){
+    
+    break_flag = 0;
+    for (int i=0; i<70;i++){ //sleep ~5min
+      wdt_enable(WDTO_4S); //Задаем интервал сторожевого таймера (2с)
+      WDTCSR |= (1 << WDIE); //Устанавливаем бит WDIE регистра WDTCSR для разрешения прерываний от сторожевого таймера
+      set_sleep_mode(SLEEP_MODE_PWR_DOWN); //Устанавливаем интересующий нас режим
+      sleep_mode(); // Переводим МК в спящий режим
+      //Serial.println(i);
+      //delay(100);
+      if (break_flag == 1){
+        break;
+        }
+      delay_counter = delay_counter+1;
+    }
+  }else{
+    
+    break_flag = 0;
+    int tmp = 70 - (delay_counter % 70);
+    for (int i=0; i< tmp;i++){ //if interrupt sleep other time
+      wdt_enable(WDTO_4S); //Задаем интервал сторожевого таймера (2с)
+      WDTCSR |= (1 << WDIE); //Устанавливаем бит WDIE регистра WDTCSR для разрешения прерываний от сторожевого таймера
+      set_sleep_mode(SLEEP_MODE_PWR_DOWN); //Устанавливаем интересующий нас режим
+      sleep_mode(); // Переводим МК в спящий режим
+      //Serial.println(i);
+      //delay(100);
+      if (break_flag == 1){
+        break;
+        }
+      delay_counter = delay_counter+1;
+    }
+    
+    
+   }
+  
+  //Serial.println("WAKING");
+  
+  }
+
+ISR (WDT_vect) {
+  wdt_disable();
+  //f = !f;
+}
+
+void inter_handler () {
+  //Serial.println("Hello World!");
+  break_flag = 1;
 }
