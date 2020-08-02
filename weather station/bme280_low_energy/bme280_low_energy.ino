@@ -40,6 +40,7 @@ short int press_mas[arr_size];
 String str="";
 unsigned long int delay_counter=0;
 volatile bool break_flag = 0;
+volatile bool can_transmit_flag = 1;
 unsigned long cur_time;
 
 void setup() {
@@ -135,6 +136,9 @@ void loop() {
 
 
 void printValues() {
+   //Serial.print(" H");
+   //Serial.println(can_transmit_flag);
+  if (can_transmit_flag == 1){
     //Serial.print("Temperature = ");
     int t = bme.readTemperature();
     int p = roundf(bme.readPressure() / 100.0F * 0.75006);
@@ -168,6 +172,7 @@ void printValues() {
 
     Serial.println();
     */
+  }
 }
 
 void command_disconnect(){
@@ -176,6 +181,7 @@ void command_disconnect(){
       str += data;
       //Serial.println(str);
       if (str=="OK+LOST"){
+        can_transmit_flag = 0;
         Serial.print("AT+SLEEP");
         //digitalWrite(13,HIGH);
         str="";
@@ -191,14 +197,15 @@ void command_disconnect(){
 }
 
 void sleep_manager(){
-  
-  //Serial.println("SLEEPING");
-  delay(60);
+
+  //Serial.println(" S");
+  delay(70);
   attachInterrupt(digitalPinToInterrupt(2), inter_handler, FALLING);
   //detachInterrupt(0);
   if ( (delay_counter % 70) == 0){
     
     break_flag = 0;
+    can_transmit_flag = 0;
     for (int i=0; i<70;i++){ //sleep ~5min
       wdt_enable(WDTO_4S); //Задаем интервал сторожевого таймера (2с)
       WDTCSR |= (1 << WDIE); //Устанавливаем бит WDIE регистра WDTCSR для разрешения прерываний от сторожевого таймера
@@ -214,6 +221,7 @@ void sleep_manager(){
   }else{
     
     break_flag = 0;
+    can_transmit_flag = 0;
     int tmp = 70 - (delay_counter % 70);
     for (int i=0; i< tmp;i++){ //if interrupt sleep other time
       wdt_enable(WDTO_4S); //Задаем интервал сторожевого таймера (2с)
@@ -230,7 +238,7 @@ void sleep_manager(){
     
     
    }
-  
+  detachInterrupt(digitalPinToInterrupt(2));
   //Serial.println("WAKING");
   
   }
@@ -241,6 +249,7 @@ ISR (WDT_vect) {
 }
 
 void inter_handler () {
-  //Serial.println("Hello World!");
+  //Serial.println("I");
   break_flag = 1;
+  can_transmit_flag = 1;
 }
