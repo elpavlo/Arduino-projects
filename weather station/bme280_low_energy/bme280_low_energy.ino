@@ -78,7 +78,7 @@ void setup() {
 
 
 void loop() { 
-
+    //Serial.println("S");
     //((millis()+ delay_counter*4000) - cur_time) > 60000)
     if ( (millis() + delay_counter*4000 )> cur_time + pressure_into_mas_interval){ //allow adding to mas if spent more than 4.5 min (sleeping 5 min)
       if (i == arr_size){
