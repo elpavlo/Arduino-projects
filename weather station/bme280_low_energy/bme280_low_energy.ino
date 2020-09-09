@@ -103,19 +103,21 @@ void loop() {
       for(int j = 0; j < i; j++)
       {
           sum = sum+press_mas[j];
-          Serial.print("mas");
-          Serial.print(j);
-          Serial.print(" = ");
-          Serial.print(press_mas[j]);
-          Serial.print(" ");
+          //Serial.print("mas");
+          //Serial.print(j);
+          //Serial.print(" = ");
+          //Serial.print(press_mas[j]);
+          //Serial.print(" ");
       }
-      Serial.println(" ");
+      //Serial.println(" ");
       float sum_float = sum;
       avg_press= roundf(sum_float/i);
       //Serial.print("end avg_press=");
       //Serial.println(avg_press);
         
       sleep_manager();
+
+      BME280_Wake(0x76);
       
     }
 
