@@ -78,9 +78,10 @@ void setup() {
 
 
 void loop() { 
-    //Serial.println("S");
+    //Serial.println("loop");
     //((millis()+ delay_counter*4000) - cur_time) > 60000)
     if ( (millis() + delay_counter*4000 )> cur_time + pressure_into_mas_interval){ //allow adding to mas if spent more than 4.5 min (sleeping 5 min)
+      //Serial.println("if");
       if (i == arr_size){
         for (int j=0; j<arr_size-1;j++){ //arr_size-1
           press_mas[j]=press_mas[j+1];
@@ -114,8 +115,11 @@ void loop() {
       avg_press= roundf(sum_float/i);
       //Serial.print("end avg_press=");
       //Serial.println(avg_press);
-        
-      sleep_manager();
+
+      if (can_transmit_flag == 0){ //засинаємо лише якщо до цього спали
+        sleep_manager();
+      }
+      
 
       BME280_Wake(0x76);
       
@@ -176,7 +180,11 @@ void printValues() {
 
     Serial.println();
     */
+  }/*
+  else{
+    Serial.print("I'm awake but can't transmit");
   }
+  */
 }
 
 void command_disconnect(){
